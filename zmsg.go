@@ -1490,6 +1490,38 @@ func (rr *X25) pack(msg []byte, off int, compression map[string]int, compress bo
 	return off, nil
 }
 
+func (rr *XMailFwd) pack(msg []byte, off int, compression map[string]int, compress bool) (int, error) {
+	off, err := rr.Hdr.pack(msg, off, compression, compress)
+	if err != nil {
+		return off, err
+	}
+	headerEnd := off
+	off, err = packString(rr.Addr, msg, off)
+	if err != nil {
+		return off, err
+	}
+	rr.Header().Rdlength = uint16(off - headerEnd)
+	return off, nil
+}
+
+func (rr *XWebFwd) pack(msg []byte, off int, compression map[string]int, compress bool) (int, error) {
+	off, err := rr.Hdr.pack(msg, off, compression, compress)
+	if err != nil {
+		return off, err
+	}
+	headerEnd := off
+	off, err = packString(rr.RedirectType, msg, off)
+	if err != nil {
+		return off, err
+	}
+	off, err = packString(rr.URI, msg, off)
+	if err != nil {
+		return off, err
+	}
+	rr.Header().Rdlength = uint16(off - headerEnd)
+	return off, nil
+}
+
 // unpack*() functions
 
 func unpackA(h RR_Header, msg []byte, off int) (RR, int, error) {
@@ -3542,6 +3574,47 @@ func unpackX25(h RR_Header, msg []byte, off int) (RR, int, error) {
 	return rr, off, err
 }
 
+func unpackXMailFwd(h RR_Header, msg []byte, off int) (RR, int, error) {
+	rr := new(XMailFwd)
+	rr.Hdr = h
+	if noRdata(h) {
+		return rr, off, nil
+	}
+	var err error
+	rdStart := off
+	_ = rdStart
+
+	rr.Addr, off, err = unpackString(msg, off)
+	if err != nil {
+		return rr, off, err
+	}
+	return rr, off, err
+}
+
+func unpackXWebFwd(h RR_Header, msg []byte, off int) (RR, int, error) {
+	rr := new(XWebFwd)
+	rr.Hdr = h
+	if noRdata(h) {
+		return rr, off, nil
+	}
+	var err error
+	rdStart := off
+	_ = rdStart
+
+	rr.RedirectType, off, err = unpackString(msg, off)
+	if err != nil {
+		return rr, off, err
+	}
+	if off == len(msg) {
+		return rr, off, nil
+	}
+	rr.URI, off, err = unpackString(msg, off)
+	if err != nil {
+		return rr, off, err
+	}
+	return rr, off, err
+}
+
 var typeToUnpack = map[uint16]func(RR_Header, []byte, int) (RR, int, error){
 	TypeA:          unpackA,
 	TypeAAAA:       unpackAAAA,
@@ -3612,4 +3685,6 @@ var typeToUnpack = map[uint16]func(RR_Header, []byte, int) (RR, int, error){
 	TypeUINFO:      unpackUINFO,
 	TypeURI:        unpackURI,
 	TypeX25:        unpackX25,
+	TypeXMailFwd:   unpackXMailFwd,
+	TypeXWebFwd:    unpackXWebFwd,
 }

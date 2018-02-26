@@ -78,6 +78,8 @@ var TypeToRR = map[uint16]func() RR{
 	TypeUINFO:      func() RR { return new(UINFO) },
 	TypeURI:        func() RR { return new(URI) },
 	TypeX25:        func() RR { return new(X25) },
+	TypeXMailFwd:   func() RR { return new(XMailFwd) },
+	TypeXWebFwd:    func() RR { return new(XWebFwd) },
 }
 
 // TypeToString is a map of strings for each RR type.
@@ -162,6 +164,8 @@ var TypeToString = map[uint16]string{
 	TypeURI:        "URI",
 	TypeX25:        "X25",
 	TypeNSAPPTR:    "NSAP-PTR",
+	TypeXMailFwd:   "X-MAIL-FWD",
+	TypeXWebFwd:    "X-WEB-FWD",
 }
 
 func (rr *A) Header() *RR_Header          { return &rr.Hdr }
@@ -234,6 +238,8 @@ func (rr *UID) Header() *RR_Header        { return &rr.Hdr }
 func (rr *UINFO) Header() *RR_Header      { return &rr.Hdr }
 func (rr *URI) Header() *RR_Header        { return &rr.Hdr }
 func (rr *X25) Header() *RR_Header        { return &rr.Hdr }
+func (rr *XMailFwd) Header() *RR_Header   { return &rr.Hdr }
+func (rr *XWebFwd) Header() *RR_Header    { return &rr.Hdr }
 
 // len() functions
 func (rr *A) len() int {
@@ -646,6 +652,17 @@ func (rr *X25) len() int {
 	l += len(rr.PSDNAddress) + 1
 	return l
 }
+func (rr *XMailFwd) len() int {
+	l := rr.Hdr.len()
+	l += len(rr.Addr) + 1
+	return l
+}
+func (rr *XWebFwd) len() int {
+	l := rr.Hdr.len()
+	l += len(rr.RedirectType) + 1
+	l += len(rr.URI) + 1
+	return l
+}
 
 // copy() functions
 func (rr *A) copy() RR {
@@ -860,4 +877,10 @@ func (rr *URI) copy() RR {
 }
 func (rr *X25) copy() RR {
 	return &X25{*rr.Hdr.copyHeader(), rr.PSDNAddress}
+}
+func (rr *XMailFwd) copy() RR {
+	return &XMailFwd{*rr.Hdr.copyHeader(), rr.Addr}
+}
+func (rr *XWebFwd) copy() RR {
+	return &XWebFwd{*rr.Hdr.copyHeader(), rr.RedirectType, rr.URI}
 }

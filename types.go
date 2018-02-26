@@ -93,6 +93,8 @@ const (
 	TypeURI        uint16 = 256
 	TypeCAA        uint16 = 257
 	TypeAVC        uint16 = 258
+	TypeXMailFwd   uint16 = 259
+	TypeXWebFwd    uint16 = 260
 
 	TypeTKEY uint16 = 249
 	TypeTSIG uint16 = 250
@@ -1301,6 +1303,21 @@ func (rr *CSYNC) len() int {
 	}
 	return l
 }
+
+type XMailFwd struct {
+	Hdr  RR_Header
+	Addr string
+}
+
+func (rr *XMailFwd) String() string { return rr.Hdr.String() + rr.Addr }
+
+type XWebFwd struct {
+	Hdr          RR_Header
+	RedirectType string
+	URI          string
+}
+
+func (rr *XWebFwd) String() string { return rr.Hdr.String() + rr.RedirectType + " " + rr.URI }
 
 // TimeToString translates the RRSIG's incep. and expir. times to the
 // string representation used when printing the record.

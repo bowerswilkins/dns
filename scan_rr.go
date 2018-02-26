@@ -484,6 +484,52 @@ func setX25(h RR_Header, c chan lex, o, f string) (RR, *ParseError, string) {
 	return rr, nil, ""
 }
 
+func setXMailFwd(h RR_Header, c chan lex, o, f string) (RR, *ParseError, string) {
+	rr := new(XMailFwd)
+	rr.Hdr = h
+
+	l := <-c
+	if l.length == 0 { // dynamic update rr.
+		return rr, nil, ""
+	}
+
+	if l.err {
+		return nil, &ParseError{f, "bad X-MAIL-FWD Addr", l}, ""
+	}
+	rr.Addr = l.token
+	return rr, nil, ""
+}
+
+func setXWebFwd(h RR_Header, c chan lex, o, f string) (RR, *ParseError, string) {
+	rr := new(XWebFwd)
+	rr.Hdr = h
+
+	l := <-c
+	if l.length == 0 { // dynamic update rr.
+		return rr, nil, ""
+	}
+
+	if l.err {
+		return nil, &ParseError{f, "bad X-WEB-FWD RedirectType", l}, ""
+	}
+
+	rr.RedirectType = l.token
+
+	<-c                // zBlank
+	l = <-c            // zString
+	if l.length == 0 { // dynamic update rr.
+		return rr, nil, ""
+	}
+
+	if l.err {
+		return nil, &ParseError{f, "bad X-WEB-FWD URI", l}, ""
+	}
+
+	rr.URI = l.token
+
+	return rr, nil, ""
+}
+
 func setKX(h RR_Header, c chan lex, o, f string) (RR, *ParseError, string) {
 	rr := new(KX)
 	rr.Hdr = h
@@ -2196,4 +2242,6 @@ var typeToparserFunc = map[uint16]parserFunc{
 	TypeURI:        {setURI, true},
 	TypeX25:        {setX25, false},
 	TypeTKEY:       {setTKEY, true},
+	TypeXMailFwd:   {setXMailFwd, true},
+	TypeXWebFwd:    {setXWebFwd, true},
 }
